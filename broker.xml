@@ -1,0 +1,114 @@
+<?xml version='1.0'?>
+<!--
+Licensed to the Apache Software Foundation (ASF) under one
+or more contributor license agreements.  See the NOTICE file
+distributed with this work for additional information
+regarding copyright ownership.  The ASF licenses this file
+to you under the Apache License, Version 2.0 (the
+"License"); you may not use this file except in compliance
+with the License.  You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing,
+software distributed under the License is distributed on an
+"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+KIND, either express or implied.  See the License for the
+specific language governing permissions and limitations
+under the License.
+-->
+
+<configuration xmlns="urn:activemq"
+               xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+               xsi:schemaLocation="urn:activemq /schema/artemis-configuration.xsd">
+
+   <core xmlns="urn:activemq:core">
+
+      <!-- <name><%= fqdn %></name> -->
+
+      <persistence-enabled>false</persistence-enabled>
+
+      <!-- this could be ASYNCIO or NIO
+       -->
+      <journal-type>ASYNCIO</journal-type>
+
+      <paging-directory>./data/paging</paging-directory>
+
+      <bindings-directory>./data/bindings</bindings-directory>
+
+      <journal-directory>./data/journal</journal-directory>
+
+      <large-messages-directory>./data/large-messages</large-messages-directory>
+
+      <journal-datasync>false</journal-datasync>
+
+      <journal-min-files>2</journal-min-files>
+
+      <journal-pool-files>-1</journal-pool-files>
+
+      <!-- how often we are looking for how many bytes are being used on the disk in ms -->
+      <disk-scan-period>5000</disk-scan-period>
+
+      <!-- the system will enter into page mode once you hit this limit.
+           This is an estimate in bytes of how much the messages are using in memory -->
+      <global-max-size>1048576000</global-max-size>
+
+      <!-- the expiry reaper thread periodic scan interval -->
+      <message-expiry-scan-period>10000</message-expiry-scan-period>
+
+      <!-- Connectors -->
+
+      <connectors>
+         <connector name="netty-connector">tcp://0.0.0.0:61616</connector>
+      </connectors>
+
+      <cluster-connections>
+         <cluster-connection name="galeb-barramento">
+            <address>jms</address>
+            <connector-ref>netty-connector</connector-ref>
+            <retry-interval>500</retry-interval>
+            <use-duplicate-detection>true</use-duplicate-detection>
+            <message-load-balancing>ON_DEMAND</message-load-balancing>
+            <max-hops>1</max-hops>
+            <static-connectors>
+               <!-- <connector-ref></connector-ref> -->
+            </static-connectors>
+         </cluster-connection>
+      </cluster-connections>
+
+      <acceptors>
+         <!-- Acceptor for every supported protocol -->
+         <acceptor name="artemis">tcp://0.0.0.0:61616?tcpSendBufferSize=1048576;tcpReceiveBufferSize=1048576;protocols=CORE,AMQP,STOMP,HORNETQ,MQTT,OPENWIRE</acceptor>
+
+
+         <!-- AMQP Acceptor.  Listens on default AMQP port for AMQP traffic.-->
+         <acceptor name="amqp">tcp://0.0.0.0:5672?protocols=AMQP</acceptor>
+      </acceptors>
+
+      <security-settings>
+         <security-setting match="#">
+            <permission type="createNonDurableQueue" roles="admins"/>
+            <permission type="deleteNonDurableQueue" roles="admins"/>
+            <permission type="createDurableQueue" roles="admins"/>
+            <permission type="deleteDurableQueue" roles="admins"/>
+            <permission type="consume" roles="admins"/>
+            <permission type="browse" roles="admins"/>
+            <permission type="send" roles="admins"/>
+            <!-- we need this otherwise ./artemis data imp wouldn't work -->
+            <permission type="manage" roles="admins"/>
+         </security-setting>
+      </security-settings>
+
+      <address-settings>
+         <!--default for catch all-->
+         <address-setting match="#">
+            <redistribution-delay>0</redistribution-delay>
+            <redelivery-delay>0</redelivery-delay>
+            <!-- with -1 only the global-max-size is in use for limiting -->
+            <max-size-bytes>-1</max-size-bytes>
+            <message-counter-history-day-limit>1</message-counter-history-day-limit>
+            <address-full-policy>BLOCK</address-full-policy>
+         </address-setting>
+      </address-settings>
+   </core>
+</configuration>
